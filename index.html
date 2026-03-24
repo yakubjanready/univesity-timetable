@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniSchedule — Jadval Tizimi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #181c24;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --muted: #6b7280;
+  --accent: #6366f1;
+  --accent2: #818cf8;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --font-head: 'Space Grotesk', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --r: 10px;
+  --r2: 14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+
+/* LAYOUT */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:.3s}
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:50}
+.content{padding:24px;flex:1}
+
+/* SIDEBAR */
+.logo{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.logo-text{font-family:var(--font-head);font-size:17px;font-weight:700;color:#fff;letter-spacing:-0.3px}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.nav{padding:12px 0;flex:1;overflow-y:auto}
+.nav-group{padding:8px 16px 4px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;color:var(--muted);border-radius:0;transition:.15s;font-size:13.5px;font-weight:500;position:relative;margin:1px 8px;border-radius:8px}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:rgba(99,102,241,0.15);color:var(--accent2)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--accent);border-radius:0 3px 3px 0}
+.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center}
+
+/* TOPBAR */
+.page-title{font-family:var(--font-head);font-size:15px;font-weight:600;flex:1}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:16px 20px;position:relative;overflow:hidden;transition:.2s}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:2px 2px 0 0}
+.stat-card.c-indigo::after{background:var(--accent)}
+.stat-card.c-green::after{background:var(--green)}
+.stat-card.c-amber::after{background:var(--amber)}
+.stat-card.c-red::after{background:var(--red)}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px}
+.stat-val{font-family:var(--font-head);font-size:28px;font-weight:700;line-height:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.table-title{font-family:var(--font-head);font-size:14px;font-weight:600}
+.table-actions{display:flex;gap:8px}
+table{width:100%;border-collapse:collapse}
+thead th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border);transition:.15s}
+tbody tr:last-child{border-bottom:0}
+tbody tr:hover{background:rgba(255,255,255,0.02)}
+td{padding:12px 16px;font-size:13.5px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:.15s;font-family:var(--font-body);white-space:nowrap}
+.btn:hover{opacity:.85;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-warning{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-icon{width:30px;height:30px;padding:0;justify-content:center;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:7px}
+.btn-icon:hover{color:var(--text);border-color:var(--border2)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(16,185,129,.15);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-amber{background:rgba(245,158,11,.15);color:var(--amber)}
+.badge-blue{background:rgba(59,130,246,.15);color:var(--blue)}
+.badge-indigo{background:rgba(99,102,241,.15);color:var(--accent2)}
+.badge-muted{background:rgba(255,255,255,.07);color:var(--muted)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:520px;max-width:95vw;max-height:85vh;overflow-y:auto;transform:scale(.96) translateY(10px);transition:.2s}
+.modal-overlay.open .modal{transform:scale(1) translateY(0)}
+.modal-head{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--font-head);font-size:15px;font-weight:600}
+.modal-body{padding:20px 24px}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* FORM */
+.form-group{margin-bottom:16px}
+label.form-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:13.5px;outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+select option{background:var(--surface2)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* TIMETABLE */
+.timetable{overflow-x:auto}
+.tt-grid{display:grid;grid-template-columns:70px repeat(5,1fr);min-width:700px}
+.tt-head{background:var(--surface2);padding:10px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.tt-time{background:var(--surface2);padding:8px;text-align:center;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.tt-cell{border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px;min-height:64px;position:relative}
+.tt-slot{background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:7px;padding:6px 8px;margin:2px;cursor:pointer;transition:.15s}
+.tt-slot:hover{background:rgba(99,102,241,.2)}
+.tt-slot.warning{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3)}
+.tt-slot-subject{font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:2px}
+.tt-slot.warning .tt-slot-subject{color:var(--amber)}
+.tt-slot-info{font-size:10px;color:var(--muted);line-height:1.4}
+
+/* NOTIFICATION ITEM */
+.notif-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+.notif-item:last-child{border-bottom:0}
+.notif-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.notif-dot.red{background:var(--red)}
+.notif-dot.amber{background:var(--amber)}
+.notif-dot.green{background:var(--green)}
+.notif-dot.blue{background:var(--blue)}
+.notif-text{font-size:13px;line-height:1.5}
+.notif-time{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* ALERT */
+.alert{padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:13px;display:flex;gap:10px;align-items:flex-start}
+.alert-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5}
+.alert-warning{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:#fcd34d}
+.alert-success{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#6ee7b7}
+.alert-alts{margin-top:8px;font-size:12px}
+.alt-room{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);padding:3px 8px;border-radius:6px;margin:3px;cursor:pointer;transition:.15s}
+.alt-room:hover{background:rgba(255,255,255,.12)}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--surface2);padding:4px;border-radius:10px;margin-bottom:20px;width:fit-content}
+.tab{padding:6px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);transition:.15s}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.5}
+.empty-text{font-size:14px}
+
+/* AVAILABILITY ROW */
+.avail-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.avail-row:last-child{border-bottom:0}
+
+/* TOAST */
+.toast-container{position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;font-size:13px;max-width:320px;display:flex;gap:10px;align-items:center;animation:toastIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.toast.success{border-color:rgba(16,185,129,.3)}
+.toast.error{border-color:rgba(239,68,68,.3)}
+
+/* SPINNER */
+.spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+/* PAGE TRANSITIONS */
+.page{animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.divider{height:1px;background:var(--border);margin:16px 0}
+.text-muted{color:var(--muted)}
+.flex{display:flex}.items-center{align-items:center}.gap-2{gap:8px}.gap-3{gap:12px}.justify-between{justify-content:space-between}.flex-1{flex:1}
+.mt-1{margin-top:4px}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
+.font-mono{font-family:monospace}.text-xs{font-size:11px}.text-sm{font-size:12.5px}
+.conflict-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:14px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-text">⬡ UniSchedule</div>
+      <div class="logo-sub">Jadval boshqaruv tizimi v2.0</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-group">Asosiy</div>
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <span class="nav-icon">📊</span>Dashboard
+      </div>
+      <div class="nav-item" onclick="navigate('schedule')">
+        <span class="nav-icon">📅</span>Dars jadvali
+      </div>
+      <div class="nav-group" style="margin-top:8px">Boshqaruv</div>
+      <div class="nav-item" onclick="navigate('teachers')">
+        <span class="nav-icon">👨‍🏫</span>O'qituvchilar
+      </div>
+      <div class="nav-item" onclick="navigate('subjects')">
+        <span class="nav-icon">📚</span>Fanlar
+      </div>
+      <div class="nav-item" onclick="navigate('groups')">
+        <span class="nav-icon">👥</span>Guruhlar
+      </div>
+      <div class="nav-item" onclick="navigate('rooms')">
+        <span class="nav-icon">🏫</span>Auditoriyalar
+      </div>
+      <div class="nav-group" style="margin-top:8px">Tizim</div>
+      <div class="nav-item" onclick="navigate('notifications')" id="nav-notif">
+        <span class="nav-icon">🔔</span>Bildirishnomalar
+        <span class="nav-badge" id="notif-count" style="display:none">0</span>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm" onclick="seedData()" id="seed-btn">Demo ma'lumotlar</button>
+        <button class="btn btn-primary btn-sm" onclick="showAddSlot()">+ Dars qo'shish</button>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- Pages rendered here -->
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">Modal</div>
+      <button class="btn btn-icon" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+const API = 'http://localhost:8000';
+let state = { page: 'dashboard', teachers: [], subjects: [], groups: [], rooms: [], slots: [], notifications: [], stats: {} };
+
+// ─── UTILS ───
+function toast(msg, type='success') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+async function api(method, path, body) {
+  try {
+    const r = await fetch(API+path, {
+      method, headers:{'Content-Type':'application/json'},
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await r.json();
+    if (!r.ok) throw data;
+    return data;
+  } catch(e) { throw e; }
+}
+
+function badge(text, type) { return `<span class="badge badge-${type}">${text}</span>`; }
+function smenaLabel(s) { return s==='first'?'1-smena':s==='second'?'2-smena':'Aralash'; }
+function roomTypeLabel(t) { return t==='lecture'?'Ma\'ruza':t==='lab'?'Laboratoriya':'Kompyuter'; }
+function mashgLabel(t) { return t==='lecture'?'Ma\'ruza':t==='practical'?'Amaliy':'Laboratoriya'; }
+function holatLabel(h) { return h==='active'?'Faol':h==='maintenance'?'Texnik xizmat':'Kritik'; }
+function slotHolatLabel(h) { return h==='scheduled'?'Rejalashtirilgan':h==='requires_action'?'Talab qiladi':'Bekor qilindi'; }
+function dayFull(d) { return {Du:'Dushanba',Se:'Seshanba',Ch:'Chorshanba',Pa:'Payshanba',Ju:'Juma'}[d]||d; }
+
+function setActivePage(p) {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const map = {dashboard:0,schedule:1,teachers:3,subjects:4,groups:5,rooms:6,notifications:8};
+  const items = document.querySelectorAll('.nav-item');
+  if(items[map[p]]) items[map[p]].classList.add('active');
+  const titles = {dashboard:'Dashboard',schedule:'Dars Jadvali',teachers:'O\'qituvchilar',subjects:'Fanlar',groups:'Guruhlar',rooms:'Auditoriyalar',notifications:'Bildirishnomalar'};
+  document.getElementById('topbar-title').textContent = titles[p]||p;
+}
+
+// ─── NAVIGATION ───
+async function navigate(page) {
+  state.page = page;
+  setActivePage(page);
+  await loadData();
+  renderPage();
+}
+
+async function loadData() {
+  const p = state.page;
+  if (['dashboard','schedule'].includes(p)) {
+    [state.stats, state.slots, state.teachers, state.subjects, state.groups, state.rooms, state.notifications] = await Promise.all([
+      api('GET','/stats'), api('GET','/slots'), api('GET','/teachers'), api('GET','/subjects'), api('GET','/groups'), api('GET','/rooms'), api('GET','/notifications')
+    ]);
+  } else if (p==='teachers') { [state.teachers] = [await api('GET','/teachers')]; }
+  else if (p==='subjects') { [state.subjects] = [await api('GET','/subjects')]; }
+  else if (p==='groups') { [state.groups] = [await api('GET','/groups')]; }
+  else if (p==='rooms') { [state.rooms] = [await api('GET','/rooms')]; }
+  else if (p==='notifications') { [state.notifications] = [await api('GET','/notifications')]; }
+  // Update badge
+  const unreads = (state.notifications||[]).filter(n=>n.holat==='sent').length;
+  const badge = document.getElementById('notif-count');
+  if (badge) { badge.textContent = unreads; badge.style.display = unreads > 0 ? 'block' : 'none'; }
+}
+
+function renderPage() {
+  const el = document.getElementById('content');
+  const p = state.page;
+  if (p==='dashboard') el.innerHTML = renderDashboard();
+  else if (p==='schedule') el.innerHTML = renderSchedule();
+  else if (p==='teachers') el.innerHTML = renderTeachers();
+  else if (p==='subjects') el.innerHTML = renderSubjects();
+  else if (p==='groups') el.innerHTML = renderGroups();
+  else if (p==='rooms') el.innerHTML = renderRooms();
+  else if (p==='notifications') el.innerHTML = renderNotifications();
+}
+
+// ─── DASHBOARD ───
+function renderDashboard() {
+  const s = state.stats;
+  return `<div class="page">
+  <div class="stats-grid">
+    <div class="stat-card c-indigo">
+      <div class="stat-label">O'qituvchilar</div>
+      <div class="stat-val">${s.teachers||0}</div>
+      <div class="stat-sub">Tizimda ro'yxatdan o'tgan</div>
+    </div>
+    <div class="stat-card c-green">
+      <div class="stat-label">Aktiv darslar</div>
+      <div class="stat-val">${s.slots_active||0}</div>
+      <div class="stat-sub">${s.slots_requires_action||0} ta talab qiladi</div>
+    </div>
+    <div class="stat-card c-amber">
+      <div class="stat-label">Auditoriyalar</div>
+      <div class="stat-val">${s.rooms||0}</div>
+      <div class="stat-sub">${s.rooms_critical||0} ta kritik holatda</div>
+    </div>
+    <div class="stat-card c-red">
+      <div class="stat-label">Bildirishnomalar</div>
+      <div class="stat-val">${s.notifications||0}</div>
+      <div class="stat-sub">${s.groups||0} guruh, ${s.subjects||0} fan</div>
+    </div>
+  </div>
+
+  ${(state.rooms||[]).some(r=>r.holat==='critical') ? `
+  <div class="alert alert-error mb-4">
+    <span>⚠️</span>
+    <div>Kritik holatdagi auditoriyalar mavjud! Darslar avtomatik qayta tayinlanmoqda.</div>
+  </div>` : ''}
+
+  ${(state.slots||[]).some(s=>s.holat==='requires_action') ? `
+  <div class="alert alert-warning mb-4">
+    <span>⚡</span>
+    <div>Ba'zi darslar uchun auditoriya topilmadi. Dispetcher aralashuvi talab etiladi.</div>
+  </div>` : ''}
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title">So'nggi darslar</div>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('schedule')">Barchasi →</button>
+      </div>
+      <table>
+        <thead><tr><th>Fan</th><th>Guruh</th><th>Kun</th><th>Vaqt</th><th>Holat</th></tr></thead>
+        <tbody>
+        ${(state.slots||[]).slice(0,6).map(sl=>`<tr>
+          <td><span style="font-weight:600">${sl.subject?.nomi||'—'}</span><br><span class="text-xs text-muted">${sl.teacher?.fio?.split(' ')[0]||''}</span></td>
+          <td>${sl.group?.nomi||'—'}</td>
+          <td>${sl.hafta_kuni}</td>
+          <td style="font-family:monospace;font-size:12px">${sl.boshlanish_vaqti}–${sl.tugash_vaqti}</td>
+          <td>${sl.holat==='scheduled'?badge('Aktiv','green'):sl.holat==='requires_action'?badge('Talab!','amber'):badge('Bekor','red')}</td>
+        </tr>`).join('')}
+        ${!state.slots?.length?'<tr><td colspan="5" class="empty"><div class="empty-icon">📅</div><div class="empty-text">Darslar yo\'q</div></td></tr>':''}
+        </tbody>
+      </table>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title">Bildirishnomalar</div>
+        <button class="btn btn-ghost btn-sm" onclick="navigate('notifications')">Barchasi →</button>
+      </div>
+      <div>
+      ${(state.notifications||[]).slice(0,6).map(n=>`
+        <div class="notif-item">
+          <div class="notif-dot ${n.hodisa_turi==='no_room'||n.hodisa_turi==='conflict'?'red':n.hodisa_turi==='reassigned'?'amber':'green'}"></div>
+          <div>
+            <div class="notif-text">${n.matni||'—'}</div>
+            <div class="notif-time">${n.qabul_qiluvchi_turi||''} · ${n.yuborilgan_sana?.slice(0,16).replace('T',' ')||''}</div>
+          </div>
+        </div>`).join('')}
+      ${!state.notifications?.length?'<div class="empty"><div class="empty-icon">🔔</div><div class="empty-text">Bildirishnomalar yo\'q</div></div>':''}
+      </div>
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─── SCHEDULE ───
+function renderSchedule() {
+  const days = ['Du','Se','Ch','Pa','Ju'];
+  const times = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+  const slots = (state.slots||[]).filter(s=>s.holat!=='cancelled');
+
+  function getSlotsAt(day, hour) {
+    return slots.filter(s=>s.hafta_kuni===day && s.boshlanish_vaqti.startsWith(hour));
+  }
+
+  return `<div class="page">
+  <div class="flex items-center justify-between mb-4">
+    <div></div>
+    <button class="btn btn-primary btn-sm" onclick="showAddSlot()">+ Dars qo'shish</button>
+  </div>
+  <div class="table-wrap">
+    <div class="timetable">
+      <div class="tt-grid">
+        <div class="tt-head">Vaqt</div>
+        ${days.map(d=>`<div class="tt-head">${dayFull(d)}</div>`).join('')}
+        ${times.map(t=>`
+          <div class="tt-time">${t}</div>
+          ${days.map(d=>{
+            const cell_slots = getSlotsAt(d,t);
+            return `<div class="tt-cell">${cell_slots.map(sl=>`
+              <div class="tt-slot ${sl.holat==='requires_action'?'warning':''}" onclick="showSlotDetail(${sl.id})">
+                <div class="tt-slot-subject">${sl.subject?.nomi||'—'}</div>
+                <div class="tt-slot-info">${sl.group?.nomi||''} · ${sl.room?.raqami||''}<br>${sl.teacher?.fio?.split(' ')[0]||''}</div>
+              </div>`).join('')}</div>`;
+          }).join('')}`).join('')}
+      </div>
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─── TEACHERS ───
+function renderTeachers() {
+  return `<div class="page">
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title">O'qituvchilar (${state.teachers.length})</div>
+      <button class="btn btn-primary btn-sm" onclick="showAddTeacher()">+ Qo'shish</button>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>F.I.Sh.</th><th>Email</th><th>Telefon</th><th>Mavjudlik</th><th>Amallar</th></tr></thead>
+      <tbody>
+      ${state.teachers.map((t,i)=>`<tr>
+        <td class="text-muted font-mono text-xs">${t.id}</td>
+        <td><strong>${t.fio}</strong></td>
+        <td class="text-muted">${t.email}</td>
+        <td class="text-muted">${t.telefon||'—'}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="showAvailability(${t.id},'${t.fio}')">Slotlar</button></td>
+        <td>
+          <button class="btn btn-icon btn-sm" onclick="showEditTeacher(${t.id})" title="Tahrirlash">✏️</button>
+          <button class="btn btn-icon btn-sm" onclick="deleteTeacher(${t.id})" title="O'chirish" style="margin-left:4px">🗑️</button>
+        </td>
+      </tr>`).join('')}
+      ${!state.teachers.length?'<tr><td colspan="6"><div class="empty"><div class="empty-icon">👨‍🏫</div><div class="empty-text">O\'qituvchilar yo\'q</div></div></td></tr>':''}
+      </tbody>
+    </table>
+  </div>
+  </div>`;
+}
+
+// ─── SUBJECTS ───
+function renderSubjects() {
+  return `<div class="page">
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title">Fanlar (${state.subjects.length})</div>
+      <button class="btn btn-primary btn-sm" onclick="showAddSubject()">+ Qo'shish</button>
+    </div>
+    <table>
+      <thead><tr><th>Kod</th><th>Nomi</th><th>Turi</th><th>Soat/hafta</th><th>Talablar</th><th>Amallar</th></tr></thead>
+      <tbody>
+      ${state.subjects.map(s=>`<tr>
+        <td>${badge(s.kodi,'indigo')}</td>
+        <td><strong>${s.nomi}</strong></td>
+        <td>${badge(mashgLabel(s.mashg_turi), s.mashg_turi==='lecture'?'blue':s.mashg_turi==='lab'?'green':'amber')}</td>
+        <td class="font-mono">${s.haftada_soat}</td>
+        <td class="text-muted text-sm">${s.talablar||'—'}</td>
+        <td>
+          <button class="btn btn-icon btn-sm" onclick="showEditSubject(${s.id})">✏️</button>
+          <button class="btn btn-icon btn-sm" onclick="deleteSubject(${s.id})" style="margin-left:4px">🗑️</button>
+        </td>
+      </tr>`).join('')}
+      ${!state.subjects.length?'<tr><td colspan="6"><div class="empty"><div class="empty-icon">📚</div><div class="empty-text">Fanlar yo\'q</div></div></td></tr>':''}
+      </tbody>
+    </table>
+  </div>
+  </div>`;
+}
+
+// ─── GROUPS ───
+function renderGroups() {
+  return `<div class="page">
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title">Guruhlar (${state.groups.length})</div>
+      <button class="btn btn-primary btn-sm" onclick="showAddGroup()">+ Qo'shish</button>
+    </div>
+    <table>
+      <thead><tr><th>Nomi</th><th>Talabalar</th><th>Smena</th><th>Vaqt oralig'i</th><th>Amallar</th></tr></thead>
+      <tbody>
+      ${state.groups.map(g=>`<tr>
+        <td><strong>${g.nomi}</strong></td>
+        <td class="font-mono">${g.talabalar_soni} ta</td>
+        <td>${badge(smenaLabel(g.smenasi), g.smenasi==='first'?'blue':g.smenasi==='second'?'amber':'green')}</td>
+        <td class="text-muted text-sm font-mono">${g.smenasi==='first'?'08:00–13:00':g.smenasi==='second'?'13:00–18:00':'10:00–16:00'}</td>
+        <td>
+          <button class="btn btn-icon btn-sm" onclick="showEditGroup(${g.id})">✏️</button>
+          <button class="btn btn-icon btn-sm" onclick="deleteGroup(${g.id})" style="margin-left:4px">🗑️</button>
+        </td>
+      </tr>`).join('')}
+      ${!state.groups.length?'<tr><td colspan="5"><div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Guruhlar yo\'q</div></div></td></tr>':''}
+      </tbody>
+    </table>
+  </div>
+  </div>`;
+}
+
+// ─── ROOMS ───
+function renderRooms() {
+  return `<div class="page">
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title">Auditoriyalar (${state.rooms.length})</div>
+      <button class="btn btn-primary btn-sm" onclick="showAddRoom()">+ Qo'shish</button>
+    </div>
+    <table>
+      <thead><tr><th>Raqami</th><th>Korpus</th><th>Turi</th><th>Sig'imi</th><th>Holat</th><th>Amallar</th></tr></thead>
+      <tbody>
+      ${state.rooms.map(r=>`<tr>
+        <td><strong>${r.raqami}</strong></td>
+        <td class="text-muted">${r.korpus||'—'}</td>
+        <td>${badge(roomTypeLabel(r.turi), r.turi==='lecture'?'blue':r.turi==='lab'?'green':'indigo')}</td>
+        <td class="font-mono">${r.sigimi} ta</td>
+        <td>${r.holat==='active'?badge('Faol','green'):r.holat==='maintenance'?badge('Texnik xizmat','amber'):badge('Kritik ⚠️','red')}</td>
+        <td>
+          <button class="btn btn-icon btn-sm" onclick="showEditRoom(${r.id})">✏️</button>
+          <button class="btn btn-icon btn-sm" onclick="deleteRoom(${r.id})" style="margin-left:4px">🗑️</button>
+        </td>
+      </tr>`).join('')}
+      ${!state.rooms.length?'<tr><td colspan="6"><div class="empty"><div class="empty-icon">🏫</div><div class="empty-text">Auditoriyalar yo\'q</div></div></td></tr>':''}
+      </tbody>
+    </table>
+  </div>
+  </div>`;
+}
+
+// ─── NOTIFICATIONS ───
+function renderNotifications() {
+  return `<div class="page">
+  <div class="table-wrap">
+    <div class="table-header">
+      <div class="table-title">Bildirishnomalar</div>
+    </div>
+    <div>
+    ${(state.notifications||[]).map(n=>`
+      <div class="notif-item">
+        <div class="notif-dot ${n.hodisa_turi==='no_room'||n.hodisa_turi==='conflict'?'red':n.hodisa_turi==='reassigned'?'amber':'green'}"></div>
+        <div style="flex:1">
+          <div class="flex items-center gap-2 mb-1">
+            ${badge(n.hodisa_turi||'—', n.hodisa_turi==='no_room'||n.hodisa_turi==='conflict'?'red':n.hodisa_turi==='reassigned'?'amber':'green')}
+            ${badge(n.qabul_qiluvchi_turi||'—','muted')}
+            <span class="text-xs text-muted">Slot #${n.slot_id||'—'}</span>
+          </div>
+          <div class="notif-text">${n.matni||'—'}</div>
+          <div class="notif-time">${n.yuborilgan_sana?.slice(0,19).replace('T',' ')||''}</div>
+        </div>
+      </div>`).join('')}
+    ${!state.notifications?.length?'<div class="empty"><div class="empty-icon">🔔</div><div class="empty-text">Bildirishnomalar yo\'q</div></div>':''}
+    </div>
+  </div>
+  </div>`;
+}
+
+// ─── MODAL HELPERS ───
+function openModal(title, body, foot) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-foot').innerHTML = foot;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ─── ADD SLOT ───
+function showAddSlot() {
+  const teacherOpts = state.teachers.map(t=>`<option value="${t.id}">${t.fio}</option>`).join('');
+  const subjectOpts = state.subjects.map(s=>`<option value="${s.id}">${s.nomi} (${s.kodi})</option>`).join('');
+  const groupOpts = state.groups.map(g=>`<option value="${g.id}">${g.nomi}</option>`).join('');
+  const roomOpts = state.rooms.filter(r=>r.holat!=='critical').map(r=>`<option value="${r.id}">${r.raqami} (${r.korpus||''}) - ${r.sigimi} ta</option>`).join('');
+  const dayOpts = ['Du','Se','Ch','Pa','Ju'].map(d=>`<option value="${d}">${dayFull(d)}</option>`).join('');
+
+  openModal('Yangi dars qo\'shish', `
+    <div id="slot-error"></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Fan</label>
+        <select id="s-fan">${subjectOpts}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">O'qituvchi</label>
+        <select id="s-teacher">${teacherOpts}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Guruh</label>
+        <select id="s-group">${groupOpts}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Auditoriya</label>
+        <select id="s-room">${roomOpts}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hafta kuni</label>
+        <select id="s-day">${dayOpts}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Boshlanish</label>
+        <input type="time" id="s-start" value="09:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tugash</label>
+        <input type="time" id="s-end" value="10:30">
+      </div>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitSlot()" id="slot-submit-btn">Saqlash</button>`
+  );
+}
+
+async function submitSlot() {
+  const btn = document.getElementById('slot-submit-btn');
+  btn.innerHTML = '<span class="spinner"></span> Tekshirilmoqda...';
+  btn.disabled = true;
+
+  const data = {
+    fan_id: +document.getElementById('s-fan').value,
+    oqituvchi_id: +document.getElementById('s-teacher').value,
+    guruh_id: +document.getElementById('s-group').value,
+    auditoriya_id: +document.getElementById('s-room').value,
+    hafta_kuni: document.getElementById('s-day').value,
+    boshlanish_vaqti: document.getElementById('s-start').value,
+    tugash_vaqti: document.getElementById('s-end').value,
+  };
+
+  try {
+    await api('POST', '/slots', data);
+    toast('Dars muvaffaqiyatli qo\'shildi!');
+    closeModal();
+    await navigate(state.page);
+  } catch(e) {
+    btn.innerHTML = 'Saqlash';
+    btn.disabled = false;
+    const errEl = document.getElementById('slot-error');
+    const detail = e.detail || e;
+    if (detail?.message) {
+      const altsHtml = detail.alternatives?.length ? `
+        <div class="alert-alts">Bo'sh auditoriyalar: ${detail.alternatives.map(r=>`
+          <span class="alt-room" onclick="selectAltRoom(${r.id},'${r.raqami}')">🏫 ${r.raqami} (${r.sigimi} ta)</span>`).join('')}
+        </div>` : '';
+      errEl.innerHTML = `<div class="conflict-box"><div style="display:flex;gap:8px;align-items:flex-start"><span>⚠️</span><div><div style="font-weight:600;color:#fca5a5;margin-bottom:4px">Nizo aniqlandi</div><div style="font-size:13px;color:#f3f4f6">${detail.message}</div>${altsHtml}</div></div></div><br>`;
+    } else {
+      errEl.innerHTML = `<div class="alert alert-error"><span>✕</span><div>${typeof detail === 'string' ? detail : JSON.stringify(detail)}</div></div>`;
+    }
+  }
+}
+
+function selectAltRoom(id, name) {
+  const sel = document.getElementById('s-room');
+  if (sel) { sel.value = id; toast(`${name} tanlandi`, 'success'); }
+}
+
+// ─── SLOT DETAIL ───
+function showSlotDetail(id) {
+  const sl = state.slots.find(s=>s.id===id);
+  if (!sl) return;
+  openModal(`Dars #${id}`, `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><div class="text-xs text-muted mb-1">FAN</div><div style="font-weight:600">${sl.subject?.nomi||'—'}</div><div class="text-xs text-muted">${sl.subject?.kodi||''}</div></div>
+      <div><div class="text-xs text-muted mb-1">O'QITUVCHI</div><div style="font-weight:600">${sl.teacher?.fio||'—'}</div></div>
+      <div><div class="text-xs text-muted mb-1">GURUH</div><div style="font-weight:600">${sl.group?.nomi||'—'}</div></div>
+      <div><div class="text-xs text-muted mb-1">AUDITORIYA</div><div style="font-weight:600">${sl.room?.raqami||'—'}</div><div class="text-xs text-muted">${sl.room?.korpus||''}</div></div>
+      <div><div class="text-xs text-muted mb-1">KUN VA VAQT</div><div style="font-weight:600;font-family:monospace">${dayFull(sl.hafta_kuni)} ${sl.boshlanish_vaqti}–${sl.tugash_vaqti}</div></div>
+      <div><div class="text-xs text-muted mb-1">HOLAT</div>${sl.holat==='scheduled'?badge('Rejalashtirilgan','green'):sl.holat==='requires_action'?badge('Talab qiladi ⚡','amber'):badge('Bekor qilindi','red')}</div>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Yopish</button>
+     <button class="btn btn-danger" onclick="cancelSlot(${id})">Bekor qilish</button>`
+  );
+}
+
+async function cancelSlot(id) {
+  if (!confirm('Darsni bekor qilmoqchimisiz?')) return;
+  await api('DELETE', `/slots/${id}`);
+  toast('Dars bekor qilindi', 'success');
+  closeModal();
+  await navigate(state.page);
+}
+
+// ─── TEACHER CRUD ───
+function showAddTeacher() {
+  openModal('O\'qituvchi qo\'shish', `
+    <div class="form-group"><label class="form-label">F.I.Sh.</label><input id="t-fio" placeholder="Familiya Ism Sharif"></div>
+    <div class="form-group"><label class="form-label">Email</label><input id="t-email" type="email" placeholder="email@univ.uz"></div>
+    <div class="form-group"><label class="form-label">Telefon</label><input id="t-phone" placeholder="+998901234567"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitTeacher()">Saqlash</button>`
+  );
+}
+
+function showEditTeacher(id) {
+  const t = state.teachers.find(x=>x.id===id);
+  openModal('O\'qituvchini tahrirlash', `
+    <div class="form-group"><label class="form-label">F.I.Sh.</label><input id="t-fio" value="${t.fio}"></div>
+    <div class="form-group"><label class="form-label">Email</label><input id="t-email" value="${t.email}"></div>
+    <div class="form-group"><label class="form-label">Telefon</label><input id="t-phone" value="${t.telefon||''}"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitTeacher(${id})">Saqlash</button>`
+  );
+}
+
+async function submitTeacher(id) {
+  const data = { fio: document.getElementById('t-fio').value, email: document.getElementById('t-email').value, telefon: document.getElementById('t-phone').value || null };
+  try {
+    if (id) await api('PUT', `/teachers/${id}`, data);
+    else await api('POST', '/teachers', data);
+    toast(id ? 'Yangilandi!' : 'Qo\'shildi!');
+    closeModal();
+    await navigate('teachers');
+  } catch(e) { toast(e.detail||'Xatolik', 'error'); }
+}
+
+async function deleteTeacher(id) {
+  if (!confirm('O\'chirmoqchimisiz?')) return;
+  try { await api('DELETE',`/teachers/${id}`); toast('O\'chirildi'); await navigate('teachers'); }
+  catch(e) { toast(e.detail||'Xatolik','error'); }
+}
+
+// ─── AVAILABILITY ───
+function showAvailability(tid, name) {
+  const avail = (state.teachers.find(t=>t.id===tid)||{});
+  const days = ['Du','Se','Ch','Pa','Ju'];
+  openModal(`${name} — Mavjudlik`, `
+    <div id="avail-list" style="margin-bottom:16px">
+      <div class="spinner" style="margin:16px auto"></div>
+    </div>
+    <div class="divider"></div>
+    <div style="margin-top:12px">
+      <div class="text-xs text-muted mb-2" style="font-weight:600;text-transform:uppercase;letter-spacing:.4px">Yangi slot qo'shish</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Kun</label>
+          <select id="av-day">${days.map(d=>`<option value="${d}">${dayFull(d)}</option>`).join('')}</select>
+        </div>
+        <div></div>
+        <div class="form-group"><label class="form-label">Boshlanish</label><input type="time" id="av-start" value="08:00"></div>
+        <div class="form-group"><label class="form-label">Tugash</label><input type="time" id="av-end" value="13:00"></div>
+      </div>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Yopish</button>
+     <button class="btn btn-primary" onclick="addAvailability(${tid})">Slot qo'shish</button>`
+  );
+  loadAvailability(tid);
+}
+
+async function loadAvailability(tid) {
+  const data = await api('GET', `/teachers/${tid}/availability`);
+  const el = document.getElementById('avail-list');
+  if (!el) return;
+  el.innerHTML = data.length ? data.map(a=>`
+    <div class="avail-row">
+      <span style="font-weight:600;min-width:80px">${dayFull(a.hafta_kuni)}</span>
+      <span class="font-mono text-sm">${a.boshlanish_vaqti} – ${a.tugash_vaqti}</span>
+      <button class="btn btn-icon btn-sm" style="margin-left:auto" onclick="delAvailability(${a.id},${tid})">🗑️</button>
+    </div>`).join('')
+    : '<div class="text-muted text-sm">Slotlar yo\'q (Cheksiz mavjud)</div>';
+}
+
+async function addAvailability(tid) {
+  const data = { oqituvchi_id: tid, hafta_kuni: document.getElementById('av-day').value, boshlanish_vaqti: document.getElementById('av-start').value, tugash_vaqti: document.getElementById('av-end').value };
+  await api('POST', '/availability', data);
+  toast('Slot qo\'shildi');
+  loadAvailability(tid);
+}
+
+async function delAvailability(id, tid) {
+  await api('DELETE', `/availability/${id}`);
+  loadAvailability(tid);
+}
+
+// ─── SUBJECT CRUD ───
+function showAddSubject() {
+  openModal('Fan qo\'shish', `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Nomi</label><input id="sub-name" placeholder="Matematika"></div>
+      <div class="form-group"><label class="form-label">Kod</label><input id="sub-code" placeholder="MATH101"></div>
+      <div class="form-group"><label class="form-label">Mashg'ulot turi</label>
+        <select id="sub-type"><option value="lecture">Ma'ruza</option><option value="practical">Amaliy</option><option value="lab">Laboratoriya</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Soat/hafta</label><input id="sub-hours" type="number" value="2"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Auditoriya talablari</label><input id="sub-req" placeholder="Proyektor, kompyuterlar..."></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitSubject()">Saqlash</button>`
+  );
+}
+
+function showEditSubject(id) {
+  const s = state.subjects.find(x=>x.id===id);
+  openModal('Fanni tahrirlash', `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Nomi</label><input id="sub-name" value="${s.nomi}"></div>
+      <div class="form-group"><label class="form-label">Kod</label><input id="sub-code" value="${s.kodi}"></div>
+      <div class="form-group"><label class="form-label">Turi</label>
+        <select id="sub-type"><option value="lecture" ${s.mashg_turi==='lecture'?'selected':''}>Ma'ruza</option><option value="practical" ${s.mashg_turi==='practical'?'selected':''}>Amaliy</option><option value="lab" ${s.mashg_turi==='lab'?'selected':''}>Laboratoriya</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Soat/hafta</label><input id="sub-hours" type="number" value="${s.haftada_soat}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Talablar</label><input id="sub-req" value="${s.talablar||''}"></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitSubject(${id})">Saqlash</button>`
+  );
+}
+
+async function submitSubject(id) {
+  const data = { nomi: document.getElementById('sub-name').value, kodi: document.getElementById('sub-code').value, mashg_turi: document.getElementById('sub-type').value, haftada_soat: +document.getElementById('sub-hours').value, talablar: document.getElementById('sub-req').value || null };
+  try {
+    if (id) await api('PUT', `/subjects/${id}`, data);
+    else await api('POST', '/subjects', data);
+    toast(id ? 'Yangilandi!' : 'Qo\'shildi!');
+    closeModal(); await navigate('subjects');
+  } catch(e) { toast(e.detail||'Xatolik','error'); }
+}
+
+async function deleteSubject(id) {
+  if (!confirm('O\'chirmoqchimisiz?')) return;
+  try { await api('DELETE',`/subjects/${id}`); toast('O\'chirildi'); await navigate('subjects'); }
+  catch(e) { toast(e.detail||'Xatolik','error'); }
+}
+
+// ─── GROUP CRUD ───
+function showAddGroup() {
+  openModal('Guruh qo\'shish', `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Nomi</label><input id="g-name" placeholder="CS-101"></div>
+      <div class="form-group"><label class="form-label">Talabalar soni</label><input id="g-count" type="number" value="25"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Smena</label>
+      <select id="g-smena"><option value="first">1-smena (08:00–13:00)</option><option value="second">2-smena (13:00–18:00)</option><option value="mixed">Aralash (10:00–16:00)</option></select>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitGroup()">Saqlash</button>`
+  );
+}
+
+function showEditGroup(id) {
+  const g = state.groups.find(x=>x.id===id);
+  openModal('Guruhni tahrirlash', `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Nomi</label><input id="g-name" value="${g.nomi}"></div>
+      <div class="form-group"><label class="form-label">Talabalar soni</label><input id="g-count" type="number" value="${g.talabalar_soni}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Smena</label>
+      <select id="g-smena"><option value="first" ${g.smenasi==='first'?'selected':''}>1-smena</option><option value="second" ${g.smenasi==='second'?'selected':''}>2-smena</option><option value="mixed" ${g.smenasi==='mixed'?'selected':''}>Aralash</option></select>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitGroup(${id})">Saqlash</button>`
+  );
+}
+
+async function submitGroup(id) {
+  const data = { nomi: document.getElementById('g-name').value, talabalar_soni: +document.getElementById('g-count').value, smenasi: document.getElementById('g-smena').value };
+  try {
+    if (id) await api('PUT', `/groups/${id}`, data);
+    else await api('POST', '/groups', data);
+    toast(id ? 'Yangilandi!' : 'Qo\'shildi!');
+    closeModal(); await navigate('groups');
+  } catch(e) { toast(e.detail||'Xatolik','error'); }
+}
+
+async function deleteGroup(id) {
+  if (!confirm('O\'chirmoqchimisiz?')) return;
+  try { await api('DELETE',`/groups/${id}`); toast('O\'chirildi'); await navigate('groups'); }
+  catch(e) { toast(e.detail||'Xatolik','error'); }
+}
+
+// ─── ROOM CRUD ───
+function showAddRoom() {
+  openModal('Auditoriya qo\'shish', `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Raqami</label><input id="r-num" placeholder="301"></div>
+      <div class="form-group"><label class="form-label">Korpus</label><input id="r-corps" placeholder="A-korpus"></div>
+      <div class="form-group"><label class="form-label">Turi</label>
+        <select id="r-type"><option value="lecture">Ma'ruza</option><option value="lab">Laboratoriya</option><option value="computer">Kompyuter sinfi</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Sig'imi</label><input id="r-cap" type="number" value="30"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Holat</label>
+      <select id="r-status"><option value="active">Faol</option><option value="maintenance">Texnik xizmat</option><option value="critical">Kritik</option></select>
+    </div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitRoom()">Saqlash</button>`
+  );
+}
+
+function showEditRoom(id) {
+  const r = state.rooms.find(x=>x.id===id);
+  openModal('Auditoriyani tahrirlash', `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Raqami</label><input id="r-num" value="${r.raqami}"></div>
+      <div class="form-group"><label class="form-label">Korpus</label><input id="r-corps" value="${r.korpus||''}"></div>
+      <div class="form-group"><label class="form-label">Turi</label>
+        <select id="r-type"><option value="lecture" ${r.turi==='lecture'?'selected':''}>Ma'ruza</option><option value="lab" ${r.turi==='lab'?'selected':''}>Laboratoriya</option><option value="computer" ${r.turi==='computer'?'selected':''}>Kompyuter sinfi</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Sig'imi</label><input id="r-cap" type="number" value="${r.sigimi}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Holat</label>
+      <select id="r-status"><option value="active" ${r.holat==='active'?'selected':''}>Faol</option><option value="maintenance" ${r.holat==='maintenance'?'selected':''}>Texnik xizmat</option><option value="critical" ${r.holat==='critical'?'selected':''}>Kritik ⚠️</option></select>
+    </div>
+    ${r.holat!=='critical' ? '<div class="alert alert-warning"><span>⚠️</span><div>Kritik holatga o\'tkazilganda, barcha darslar avtomatik qayta tayinlanadi!</div></div>' : ''}`,
+    `<button class="btn btn-ghost" onclick="closeModal()">Bekor</button>
+     <button class="btn btn-primary" onclick="submitRoom(${id})">Saqlash</button>`
+  );
+}
+
+async function submitRoom(id) {
+  const data = { raqami: document.getElementById('r-num').value, korpus: document.getElementById('r-corps').value||null, turi: document.getElementById('r-type').value, sigimi: +document.getElementById('r-cap').value, holat: document.getElementById('r-status').value };
+  try {
+    if (id) { await api('PUT', `/rooms/${id}`, data); toast('Yangilandi! Kritik holatda avtomatik qayta tayinlash bajarildi.'); }
+    else { await api('POST', '/rooms', data); toast('Qo\'shildi!'); }
+    closeModal(); await navigate('rooms');
+  } catch(e) { toast(e.detail||'Xatolik','error'); }
+}
+
+async function deleteRoom(id) {
+  if (!confirm('O\'chirmoqchimisiz?')) return;
+  try { await api('DELETE',`/rooms/${id}`); toast('O\'chirildi'); await navigate('rooms'); }
+  catch(e) { toast(e.detail||'Xatolik','error'); }
+}
+
+// ─── SEED ───
+async function seedData() {
+  const btn = document.getElementById('seed-btn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await api('POST', '/seed');
+    toast(r.message || 'Demo ma\'lumotlar yuklandi!');
+    await navigate('dashboard');
+  } catch(e) { toast('Xatolik','error'); }
+  finally { btn.innerHTML = 'Demo ma\'lumotlar'; }
+}
+
+// ─── INIT ───
+navigate('dashboard');
+</script>
+</body>
+</html>
