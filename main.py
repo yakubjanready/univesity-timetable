@@ -8,7 +8,7 @@ from typing import Optional, List
 from datetime import datetime, time
 import enum
 
-DATABASE_URL = "sqlite:///./jadval.db"
+DATABASE_URL = "sqlite:///"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
